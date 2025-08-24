@@ -202,9 +202,29 @@ static void ConfigureSwagger(IServiceCollection services)
 
 static void ConfigureMiddleware(WebApplication app)
 {
+    // Configure the HTTP request pipeline
+    if (app.Environment.IsDevelopment())
+    {
+        app.UseSwagger();
+        app.UseSwaggerUI();
+    }
+    else
+    {
+        // Enable Swagger in production for Azure deployment
+        app.UseSwagger();
+        app.UseSwaggerUI(c =>
+        {
+            c.SwaggerEndpoint("/swagger/v1/swagger.json", "VNS Travel API v1");
+            c.RoutePrefix = "swagger";
+        });
+    }
+
     app.UseCors("AllowAll");
     app.UseHttpsRedirection();
     app.UseAuthentication();
     app.UseAuthorization();
     app.MapControllers();
+
+    // Default route redirect to Swagger
+    app.MapGet("/", () => Results.Redirect("/swagger"));
 }
