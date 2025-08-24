@@ -111,7 +111,16 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
-    c.SwaggerDoc("v1", new OpenApiInfo { Title = "VNS Travel API", Version = "v1" });
+    c.SwaggerDoc("v1", new OpenApiInfo { 
+        Title = "VNS Travel API", 
+        Version = "v1",
+        Description = "A comprehensive API for VNS Travel platform including authentication, bookings, services, and more.",
+        Contact = new OpenApiContact
+        {
+            Name = "VNS Travel Team",
+            Email = "support@vnstravel.com"
+        }
+    });
     
     // Configure Swagger to use JWT Authentication
     c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
@@ -137,6 +146,14 @@ builder.Services.AddSwaggerGen(c =>
             Array.Empty<string>()
         }
     });
+
+    // Include XML comments if they exist
+    var xmlFile = $"{System.Reflection.Assembly.GetExecutingAssembly().GetName().Name}.xml";
+    var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
+    if (File.Exists(xmlPath))
+    {
+        c.IncludeXmlComments(xmlPath);
+    }
 });
 
 var app = builder.Build();
@@ -150,6 +167,16 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+else
+{
+    // Enable Swagger in production for Azure deployment
+    app.UseSwagger();
+    app.UseSwaggerUI(c =>
+    {
+        c.SwaggerEndpoint("/swagger/v1/swagger.json", "VNS Travel API v1");
+        c.RoutePrefix = "swagger";
+    });
+}
 
 app.UseCors("AllowAll");
 
@@ -159,5 +186,8 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+
+// Add a default route to redirect to Swagger
+app.MapGet("/", () => Results.Redirect("/swagger"));
 
 app.Run();
